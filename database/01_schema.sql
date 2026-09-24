@@ -18,6 +18,8 @@ CREATE TYPE tipo_comprobante AS ENUM ('ticket', 'factura');
 CREATE TYPE metodo_pago AS ENUM ('efectivo', 'tarjeta', 'qr');
 CREATE TYPE tipo_unidad_venta AS ENUM ('caja', 'fraccion');
 CREATE TYPE estado_caja AS ENUM ('abierta', 'cerrada');
+CREATE TYPE estado_reserva AS ENUM ('pendiente', 'confirmada', 'preparada', 'entregada', 'cancelada');
+CREATE TYPE estado_detalle_reserva AS ENUM ('pendiente', 'confirmada', 'preparada', 'entregada', 'cancelada');
 
 -- =============================================================================
 -- 2. TABLAS DEL SISTEMA
@@ -190,9 +192,74 @@ CREATE TABLE recetas_controladas (
 -- 3. ÍNDICES DE ALTO RENDIMIENTO
 -- =============================================================================
 
+-- Tabla: CONSULTORIOS_MEDICOS
+CREATE TABLE consultorios (
+    id_consultorio SERIAL PRIMARY KEY,
+    nombre VARCHAR(120) NOT NULL UNIQUE,
+    direccion VARCHAR(200),
+    telefono VARCHAR(30),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla: MEDICOS
+CREATE TABLE medicos (
+    id_medico SERIAL PRIMARY KEY,
+    nombre_completo VARCHAR(150) NOT NULL,
+    especialidad VARCHAR(100),
+    matricula_profesional VARCHAR(60) NOT NULL UNIQUE,
+    telefono VARCHAR(30),
+    email VARCHAR(100),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla: PACIENTES
+CREATE TABLE pacientes (
+    id_paciente SERIAL PRIMARY KEY,
+    ci VARCHAR(30) NOT NULL UNIQUE,
+    nombre_completo VARCHAR(150) NOT NULL,
+    telefono VARCHAR(30),
+    email VARCHAR(100),
+    fecha_nacimiento DATE,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla: RESERVAS_MEDICAMENTOS
+CREATE TABLE reservas_medicamentos (
+    id_reserva SERIAL PRIMARY KEY,
+    id_consultorio INT NOT NULL REFERENCES consultorios(id_consultorio) ON DELETE RESTRICT,
+    id_medico INT NOT NULL REFERENCES medicos(id_medico) ON DELETE RESTRICT,
+    id_paciente INT NOT NULL REFERENCES pacientes(id_paciente) ON DELETE RESTRICT,
+    id_empleado INT NOT NULL REFERENCES empleados(id_empleado) ON DELETE RESTRICT,
+    fecha_solicitud TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    fecha_hora_retiro TIMESTAMP WITH TIME ZONE,
+    estado estado_reserva NOT NULL DEFAULT 'pendiente',
+    observaciones VARCHAR(500),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla: DETALLE_RESERVAS_MEDICAMENTOS
+CREATE TABLE detalle_reservas_medicamentos (
+    id_detalle_reserva SERIAL PRIMARY KEY,
+    id_reserva INT NOT NULL REFERENCES reservas_medicamentos(id_reserva) ON DELETE CASCADE,
+    id_producto INT NOT NULL REFERENCES productos_medicamentos(id_producto) ON DELETE RESTRICT,
+    cantidad_solicitada INT NOT NULL CHECK (cantidad_solicitada > 0),
+    cantidad_confirmada INT NOT NULL DEFAULT 0 CHECK (cantidad_confirmada >= 0),
+    estado_detalle estado_detalle_reserva NOT NULL DEFAULT 'pendiente',
+    observaciones VARCHAR(250),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX idx_productos_cod_barras ON productos_medicamentos(codigo_barras);
 CREATE INDEX idx_productos_nombre ON productos_medicamentos(nombre_comercial, nombre_generico);
 CREATE INDEX idx_lotes_fefo ON lotes_inventario(id_producto, fecha_vencimiento, estado);
 CREATE INDEX idx_kardex_lote_fecha ON kardex_movimientos(id_lote, fecha_hora DESC);
 CREATE INDEX idx_ventas_fecha ON ventas(fecha_venta DESC);
 CREATE INDEX idx_ventas_sesion ON ventas(id_sesion_caja);
+CREATE INDEX idx_reservas_estado ON reservas_medicamentos(estado, fecha_solicitud DESC);
+CREATE INDEX idx_detalle_reservas_producto ON detalle_reservas_medicamentos(id_reserva, id_producto);
+CREATE INDEX idx_consultorios_activo ON consultorios(activo);
+CREATE INDEX idx_medicos_activo ON medicos(activo);
+CREATE INDEX idx_pacientes_ci ON pacientes(ci);

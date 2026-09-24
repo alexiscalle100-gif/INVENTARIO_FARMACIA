@@ -108,4 +108,17 @@ export class ApiService {
     const url = busqueda ? `${this.baseUrl}/recetas?busqueda=${encodeURIComponent(busqueda)}` : `${this.baseUrl}/recetas`;
     return this.http.get<{ success: boolean; data: any[] }>(url, this.headers);
   }
+
+  // Reservas de medicamentos por consultorio
+  getReservas(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.baseUrl}/reservas`, this.headers);
+  }
+
+  createConsultorio(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/reservas/consultorios`, payload, this.headers);
+  }
+
+  createMedico(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/reservas/medicos`, payload, this.headers);
+  }
 }

@@ -7,6 +7,7 @@ import comprasRoutes from './compras.routes';
 import cajasRoutes from './cajas.routes';
 import recetasRoutes from './recetas.routes';
 import dashboardRoutes from './dashboard.routes';
+import reservasRoutes from './reservas.routes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/compras', comprasRoutes);
 router.use('/cajas', cajasRoutes);
 router.use('/recetas', recetasRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/reservas', reservasRoutes);
 
 export default router;

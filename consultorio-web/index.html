@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consultorio - Reservas Farmacia</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Consultorio médico</p>
+          <h1>Reservas de medicamentos</h1>
+        </div>
+        <button id="logoutBtn" class="secondary hidden">Cerrar sesión</button>
+      </header>
+
+      <main>
+        <section id="loginSection" class="card">
+          <h2>Iniciar sesión</h2>
+          <form id="loginForm">
+            <label>
+              Usuario
+              <input type="text" id="usuario" value="admin" required />
+            </label>
+            <label>
+              Contraseña
+              <input type="password" id="password" value="admin123" required />
+            </label>
+            <button type="submit">Entrar</button>
+          </form>
+          <p class="hint">Credenciales demo: admin / admin123</p>
+        </section>
+
+        <section id="appSection" class="hidden">
+          <div class="grid two-columns">
+            <section class="card">
+              <h2>Datos de la reserva</h2>
+              <form id="reservaForm">
+                <div class="field-grid">
+                  <label>
+                    Consultorio
+                    <select id="consultorioSelect"></select>
+                  </label>
+                  <label>
+                    Médico
+                    <select id="medicoSelect"></select>
+                  </label>
+                  <label>
+                    Paciente
+                    <select id="pacienteSelect"></select>
+                  </label>
+                  <label>
+                    Fecha y hora de retiro
+                    <input type="datetime-local" id="fechaRetiro" required />
+                  </label>
+                </div>
+
+                <label>
+                  Observaciones
+                  <textarea id="observaciones" rows="3" placeholder="Ej. Requiere medicación para control..."></textarea>
+                </label>
+
+                <div class="section-header">
+                  <h3>Medicamentos</h3>
+                  <button type="button" id="addItemBtn" class="secondary">+ Agregar medicamento</button>
+                </div>
+
+                <div id="itemsList" class="items-list"></div>
+
+                <button type="submit" class="primary full">Guardar reserva</button>
+              </form>
+            </section>
+
+            <aside class="card">
+              <h2>Crear registros rápidos</h2>
+
+              <div class="mini-form">
+                <h3>Nuevo paciente</h3>
+                <form id="pacienteForm">
+                  <input type="text" id="pacienteCi" placeholder="CI" required />
+                  <input type="text" id="pacienteNombre" placeholder="Nombre completo" required />
+                  <input type="tel" id="pacienteTelefono" placeholder="Teléfono" />
+                  <input type="email" id="pacienteEmail" placeholder="Correo" />
+                  <button type="submit">Guardar paciente</button>
+                </form>
+              </div>
+
+              <div class="mini-form">
+                <h3>Nuevo médico</h3>
+                <form id="medicoForm">
+                  <input type="text" id="medicoNombre" placeholder="Nombre completo" required />
+                  <input type="text" id="medicoMatricula" placeholder="Matrícula" required />
+                  <input type="text" id="medicoEspecialidad" placeholder="Especialidad" />
+                  <button type="submit">Guardar médico</button>
+                </form>
+              </div>
+
+              <div class="mini-form">
+                <h3>Nuevo consultorio</h3>
+                <form id="consultorioForm">
+                  <input type="text" id="consultorioNombre" placeholder="Nombre del consultorio" required />
+                  <input type="text" id="consultorioDireccion" placeholder="Dirección" />
+                  <button type="submit">Guardar consultorio</button>
+                </form>
+              </div>
+            </aside>
+          </div>
+
+          <section class="card">
+            <h2>Reservas activas</h2>
+            <div id="reservasList" class="reservas-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
