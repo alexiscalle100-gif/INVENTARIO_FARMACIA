@@ -114,8 +114,24 @@ export class ApiService {
     return this.http.get<{ success: boolean; data: any[] }>(`${this.baseUrl}/reservas`, this.headers);
   }
 
-  createConsultorio(payload: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/reservas/consultorios`, payload, this.headers);
+  getConsultorios(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.baseUrl}/reservas/consultorios`, this.headers);
+  }
+
+  getMedicos(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.baseUrl}/reservas/medicos`, this.headers);
+  }
+
+  getConsultorioMedicos(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.baseUrl}/reservas/consultorio-medicos`, this.headers);
+  }
+
+  assignMedicoToConsultorio(id_consultorio: number, id_medico: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/reservas/consultorio-medicos`, { id_consultorio, id_medico }, this.headers);
+  }
+
+  updateReservaEstado(id_reserva: number, estado: string, observaciones?: string): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/reservas/${id_reserva}/estado`, { estado, observaciones }, this.headers);
   }
 
   createMedico(payload: any): Observable<any> {

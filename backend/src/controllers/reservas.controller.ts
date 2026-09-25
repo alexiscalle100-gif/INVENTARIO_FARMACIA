@@ -52,21 +52,100 @@ export const getCatalogos = async (_req: Request, res: Response): Promise<void> 
   }
 };
 
-export const createConsultorio = async (req: Request, res: Response): Promise<void> => {
+export const getConsultorioMedicos = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nombre, direccion, telefono } = req.body;
+    const { consultorio_id, medico_id } = req.query;
 
-    if (!nombre) {
-      res.status(400).json({ success: false, message: 'El nombre del consultorio es obligatorio.' });
+    let sql = `
+      SELECT
+        cm.*,
+        c.nombre AS consultorio_nombre,
+        m.nombre_completo AS medico_nombre,
+        m.especialidad,
+        m.matricula_profesional
+      FROM consultorio_medicos cm
+      INNER JOIN consultorios c ON c.id_consultorio = cm.id_consultorio
+      INNER JOIN medicos m ON m.id_medico = cm.id_medico
+      WHERE cm.activo = TRUE
+    `;
+    const params: any[] = [];
+
+    if (consultorio_id) {
+      params.push(Number(consultorio_id));
+      sql += ` AND cm.id_consultorio = $${params.length}`;
+    }
+
+    if (medico_id) {
+      params.push(Number(medico_id));
+      sql += ` AND cm.id_medico = $${params.length}`;
+    }
+
+    sql += ' ORDER BY c.nombre ASC, m.nombre_completo ASC';
+
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const assignMedicoToConsultorio = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_consultorio, id_medico } = req.body;
+
+    if (!id_consultorio || !id_medico) {
+      res.status(400).json({
+        success: false,
+        message: 'Debe enviar id_consultorio e id_medico.',
+      });
       return;
     }
 
     const result = await query(
-      `INSERT INTO consultorios (nombre, direccion, telefono, activo) VALUES ($1, $2, $3, TRUE) RETURNING *`,
-      [nombre, direccion || null, telefono || null]
+      `
+        INSERT INTO consultorio_medicos (id_consultorio, id_medico, activo)
+        VALUES ($1, $2, TRUE)
+        ON CONFLICT (id_consultorio, id_medico)
+        DO UPDATE SET activo = TRUE
+        RETURNING *
+      `,
+      [Number(id_consultorio), Number(id_medico)]
     );
 
-    res.status(201).json({ success: true, message: 'Consultorio creado exitosamente.', data: result.rows[0] });
+    res.status(201).json({
+      success: true,
+      message: 'Médico asignado al consultorio correctamente.',
+      data: result.rows[0],
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const removeMedicoFromConsultorio = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(
+      `
+        UPDATE consultorio_medicos
+        SET activo = FALSE
+        WHERE id_consultorio_medico = $1
+        RETURNING *
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ success: false, message: 'Relación no encontrada.' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Médico desasignado del consultorio correctamente.',
+      data: result.rows[0],
+    });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

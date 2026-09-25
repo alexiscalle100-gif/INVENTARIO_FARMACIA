@@ -249,18 +249,191 @@ import { AuthService } from '../../core/services/auth.service';
 
       </div>
 
+      <!-- Reservas de consultorios y médicos -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-bold text-slate-900 text-lg">Reservas de Medicamentos por Consultorio</h3>
+            <p class="text-xs text-slate-500">Solicitudes pendientes y confirmadas enviadas desde los consultorios médicos</p>
+          </div>
+        </div>
+
+        <div *ngIf="reservas.length === 0" class="p-8 text-center text-slate-400 text-sm">
+          No hay reservas registradas aún.
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div *ngFor="let reserva of reservas" class="border border-slate-200 rounded-xl p-4 bg-slate-50/70">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <p class="text-sm font-bold text-slate-900">Reserva #{{ reserva.id_reserva }}</p>
+                <p class="text-xs text-slate-500">{{ reserva.consultorio_nombre }}</p>
+              </div>
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
+                    [ngClass]="{
+                      'bg-amber-100 text-amber-700': reserva.estado === 'pendiente',
+                      'bg-blue-100 text-blue-700': reserva.estado === 'confirmada',
+                      'bg-emerald-100 text-emerald-700': reserva.estado === 'preparada',
+                      'bg-violet-100 text-violet-700': reserva.estado === 'entregada',
+                      'bg-rose-100 text-rose-700': reserva.estado === 'cancelada'
+                    }">
+                {{ reserva.estado }}
+              </span>
+            </div>
+
+            <div class="space-y-1 text-sm text-slate-600">
+              <p><span class="font-semibold text-slate-700">Médico:</span> {{ reserva.medico_nombre }}</p>
+              <p><span class="font-semibold text-slate-700">Paciente:</span> {{ reserva.paciente_nombre }}</p>
+              <p><span class="font-semibold text-slate-700">Retiro:</span> {{ reserva.fecha_hora_retiro ? (reserva.fecha_hora_retiro | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</p>
+              <p *ngIf="reserva.observaciones"><span class="font-semibold text-slate-700">Obs.:</span> {{ reserva.observaciones }}</p>
+            </div>
+
+            <div *ngIf="puedeGestionarReservas() && reserva.estado !== 'entregada' && reserva.estado !== 'cancelada'" class="mt-4 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                (click)="cambiarEstadoReserva(reserva.id_reserva, 'entregada')"
+                class="w-full bg-emerald-600 text-white rounded-xl px-3 py-2 text-sm font-semibold hover:bg-emerald-700">
+                Marcar como entregada
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Administración: crear médico y asignar médico al consultorio (solo admin) -->
+      <div *ngIf="isAdmin" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+          <h3 class="font-bold text-slate-900 text-lg mb-4">Agregar Médico</h3>
+          <form (ngSubmit)="crearMedico()" class="space-y-3">
+            <input [(ngModel)]="nuevoMedico.nombre_completo" name="nombre_completo" type="text" placeholder="Nombre completo" class="w-full rounded-xl border border-slate-200 px-3 py-2" required>
+            <input [(ngModel)]="nuevoMedico.matricula_profesional" name="matricula_profesional" type="text" placeholder="Matrícula profesional" class="w-full rounded-xl border border-slate-200 px-3 py-2" required>
+            <input [(ngModel)]="nuevoMedico.especialidad" name="especialidad" type="text" placeholder="Especialidad" class="w-full rounded-xl border border-slate-200 px-3 py-2">
+            <button type="submit" class="w-full bg-teal-600 text-white font-bold rounded-xl px-4 py-2.5 hover:bg-teal-700">Guardar médico</button>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+          <h3 class="font-bold text-slate-900 text-lg mb-4">Asignar médico a consultorio</h3>
+          <form (ngSubmit)="asignarMedicoConsultorio()" class="space-y-3">
+            <select [(ngModel)]="asignacion.id_consultorio" name="id_consultorio" class="w-full rounded-xl border border-slate-200 px-3 py-2" required>
+              <option [ngValue]="null" disabled>Seleccione consultorio</option>
+              <option *ngFor="let consultorio of consultorios" [ngValue]="consultorio.id_consultorio">{{ consultorio.nombre }}</option>
+            </select>
+            <select [(ngModel)]="asignacion.id_medico" name="id_medico" class="w-full rounded-xl border border-slate-200 px-3 py-2" required>
+              <option [ngValue]="null" disabled>Seleccione médico</option>
+              <option *ngFor="let medico of medicos" [ngValue]="medico.id_medico">{{ medico.nombre_completo }} - {{ medico.matricula_profesional }}</option>
+            </select>
+            <button type="submit" class="w-full bg-slate-900 text-white font-bold rounded-xl px-4 py-2.5 hover:bg-slate-800">Asignar médico</button>
+          </form>
+        </div>
+      </div>
+
     </div>
   `
 })
 export class DashboardComponent implements OnInit {
   metrics: any = null;
   graficos: any = null;
+  reservas: any[] = [];
+  consultorios: any[] = [];
+  medicos: any[] = [];
+  nuevoMedico = {
+    nombre_completo: '',
+    matricula_profesional: '',
+    especialidad: '',
+  };
+  asignacion = {
+    id_consultorio: null as number | null,
+    id_medico: null as number | null,
+  };
 
   constructor(private api: ApiService, public authService: AuthService) {}
+
+  get isAdmin(): boolean {
+    return this.authService.currentUser()?.cargo_rol === 'admin';
+  }
+
+  puedeGestionarReservas(): boolean {
+    const rol = this.authService.currentUser()?.cargo_rol;
+    return rol === 'admin' || rol === 'farmaceutico';
+  }
 
   ngOnInit() {
     this.cargarDashboard();
     this.cargarGraficos();
+    this.cargarReservas();
+    this.cargarCatalogos();
+  }
+
+  cargarCatalogos() {
+    this.api.getConsultorios().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.consultorios = res.data || [];
+        }
+      },
+      error: (err) => console.error('Error cargando consultorios:', err)
+    });
+
+    this.api.getMedicos().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.medicos = res.data || [];
+        }
+      },
+      error: (err) => console.error('Error cargando médicos:', err)
+    });
+  }
+
+  cargarReservas() {
+    this.api.getReservas().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.reservas = res.data || [];
+        }
+      },
+      error: (err) => console.error('Error cargando reservas:', err)
+    });
+  }
+
+  crearMedico() {
+    if (!this.isAdmin) return;
+    if (!this.nuevoMedico.nombre_completo || !this.nuevoMedico.matricula_profesional) {
+      return;
+    }
+
+    this.api.createMedico(this.nuevoMedico).subscribe({
+      next: () => {
+        this.nuevoMedico = { nombre_completo: '', matricula_profesional: '', especialidad: '' };
+        this.cargarCatalogos();
+      },
+      error: (err) => console.error('Error creando médico:', err)
+    });
+  }
+
+  asignarMedicoConsultorio() {
+    if (!this.isAdmin) return;
+    if (!this.asignacion.id_consultorio || !this.asignacion.id_medico) {
+      return;
+    }
+
+    this.api.assignMedicoToConsultorio(Number(this.asignacion.id_consultorio), Number(this.asignacion.id_medico)).subscribe({
+      next: () => {
+        this.asignacion = { id_consultorio: null, id_medico: null };
+      },
+      error: (err) => console.error('Error asignando médico al consultorio:', err)
+    });
+  }
+
+  cambiarEstadoReserva(id_reserva: number, estado: string) {
+    if (!this.puedeGestionarReservas()) return;
+
+    this.api.updateReservaEstado(id_reserva, estado, 'Cambio de estado desde dashboard principal').subscribe({
+      next: () => {
+        this.cargarReservas();
+      },
+      error: (err) => console.error('Error actualizando estado de reserva:', err)
+    });
   }
 
   cargarDashboard() {

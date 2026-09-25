@@ -214,6 +214,16 @@ CREATE TABLE medicos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabla: CONSULTORIO_MEDICOS
+CREATE TABLE consultorio_medicos (
+    id_consultorio_medico SERIAL PRIMARY KEY,
+    id_consultorio INT NOT NULL REFERENCES consultorios(id_consultorio) ON DELETE CASCADE,
+    id_medico INT NOT NULL REFERENCES medicos(id_medico) ON DELETE CASCADE,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id_consultorio, id_medico)
+);
+
 -- Tabla: PACIENTES
 CREATE TABLE pacientes (
     id_paciente SERIAL PRIMARY KEY,
@@ -262,4 +272,6 @@ CREATE INDEX idx_reservas_estado ON reservas_medicamentos(estado, fecha_solicitu
 CREATE INDEX idx_detalle_reservas_producto ON detalle_reservas_medicamentos(id_reserva, id_producto);
 CREATE INDEX idx_consultorios_activo ON consultorios(activo);
 CREATE INDEX idx_medicos_activo ON medicos(activo);
+CREATE INDEX idx_consultorio_medicos_consultorio ON consultorio_medicos(id_consultorio, activo);
+CREATE INDEX idx_consultorio_medicos_medico ON consultorio_medicos(id_medico, activo);
 CREATE INDEX idx_pacientes_ci ON pacientes(ci);
